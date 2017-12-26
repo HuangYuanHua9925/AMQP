@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:util="http://www.springframework.org/schema/util" xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd    	
+     	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+     	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd 
+     	http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.3.xsd
+     	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+     	http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.6.xsd "
+	default-lazy-init="false">
+
+
+	<bean id="connectionFactory"
+		class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
+		<property name="host" value="127.0.0.1"></property>
+		<property name="port" value="5672"></property>
+		<property name="username" value="guest"></property>
+		<property name="password" value="guest"></property>
+		<property name="virtualHost" value="/"></property>
+	</bean>
+
+	<rabbit:admin id="rabbitmqConnectionFactory"
+		connection-factory="connectionFactory" />
+		
+	<!--定义queue durable:是否持久化 exclusive: 仅创建者可以使用的私有队列，断开后自动删除 auto_delete: 
+		当所有消费客户端连接断开后，是否自动删除队列 -->
+	<rabbit:queue name="spittle.alert.queue" durable="true"/>
+
+	<bean id="myMessageListener" class="com.amqp.rabbitmq.config.MyMessageListener"></bean>
+
+	<rabbit:listener-container
+		connection-factory="connectionFactory" concurrency="8">
+		<rabbit:listener queues="spittle.alert.queue" ref="myMessageListener"
+			method="onMessage" response-exchange="exchange" />
+	</rabbit:listener-container>
+
+</beans>
